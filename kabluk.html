@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="format-detection" content="telephone=no">
+<title>Приглашение на свадьбу</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html, body { height:100%; overflow:hidden; font-family: 'Georgia', serif; }
+
+  /* ---------- ЭКРАН С СЕРДЦЕМ ---------- */
+  #intro {
+    position:fixed; inset:0;
+    display:flex; flex-direction:column;
+    align-items:center; justify-content:center;
+    background: radial-gradient(circle at 50% 40%, #3a0d1f 0%, #1a050d 70%, #0d0206 100%);
+    z-index:10;
+    transition: opacity .9s ease, transform .9s ease;
+    -webkit-transition: opacity .9s ease, -webkit-transform .9s ease;
+  }
+  #intro.hide {
+    opacity:0;
+    -webkit-transform: scale(1.15);
+    transform: scale(1.15);
+    pointer-events:none;
+  }
+
+  .heart-btn {
+    width: 140px; height: 140px;
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer;
+    touch-action: manipulation;
+    -webkit-user-select: none; user-select: none;
+    /* статичное свечение — НЕ в @keyframes */
+    -webkit-filter: drop-shadow(0 0 25px rgba(255,60,110,.7));
+    filter: drop-shadow(0 0 25px rgba(255,60,110,.7));
+  }
+
+  .heart-btn svg {
+    width:100%; height:100%;
+    display:block;
+    transform-origin: center center;
+    -webkit-transform-origin: center center;
+    will-change: transform;
+  }
+
+  .heart-btn .fill { fill:#ff3c6e; }
+
+  /* анимация вешается классом из JS после load — надёжно для Safari */
+  .heart-btn svg.beat {
+    -webkit-animation: pulse 1.4s ease-in-out infinite;
+    animation: pulse 1.4s ease-in-out infinite;
+  }
+
+  @-webkit-keyframes pulse {
+    0%,100% { -webkit-transform: scale(1);    transform: scale(1); }
+    50%     { -webkit-transform: scale(1.12); transform: scale(1.12); }
+  }
+  @keyframes pulse {
+    0%,100% { -webkit-transform: scale(1);    transform: scale(1); }
+    50%     { -webkit-transform: scale(1.12); transform: scale(1.12); }
+  }
+
+  .hint {
+    margin-top: 40px;
+    color:#f3c7d4; font-size:15px; letter-spacing:2px;
+    text-transform:uppercase; opacity:.8;
+    -webkit-animation: blink 2s ease-in-out infinite;
+    animation: blink 2s ease-in-out infinite;
+  }
+  @-webkit-keyframes blink { 0%,100%{opacity:.35} 50%{opacity:.9} }
+  @keyframes blink { 0%,100%{opacity:.35} 50%{opacity:.9} }
+
+  /* ---------- САМ САЙТ ПРИГЛАШЕНИЯ ---------- */
+  #site {
+    position:fixed; inset:0;
+    overflow-y:auto; -webkit-overflow-scrolling:touch;
+    background: #fdf6f0;
+    opacity:0; visibility:hidden;
+    transition: opacity .9s ease .3s;
+    -webkit-transition: opacity .9s ease .3s;
+  }
+  #site.show { opacity:1; visibility:visible; }
+
+  .hero {
+    min-height:100vh;
+    display:flex; flex-direction:column;
+    align-items:center; justify-content:center;
+    text-align:center; padding:40px 24px;
+    background: linear-gradient(160deg,#fdf6f0 0%,#fbe9ee 100%);
+  }
+  .names {
+    font-size: 42px; color:#7a1f3d; line-height:1.15;
+    font-weight:400; letter-spacing:1px;
+  }
+  .names .amp { color:#e0567f; font-style:italic; font-size:34px; display:block; margin:6px 0; }
+  .date {
+    margin-top:28px; font-size:20px; color:#a35c74;
+    letter-spacing:4px; text-transform:uppercase;
+  }
+  .divider { width:60px; height:1px; background:#e0567f; margin:32px 0; opacity:.6; }
+  .subtitle { color:#8a5a6a; font-size:17px; line-height:1.7; max-width:340px; }
+
+  .section { padding:60px 24px; text-align:center; }
+  .section h2 {
+    font-size:15px; letter-spacing:5px; text-transform:uppercase;
+    color:#c07a92; margin-bottom:26px; font-weight:400;
+  }
+  .section p { color:#5c3a45; font-size:17px; line-height:1.8; }
+  .big { font-size:22px; color:#7a1f3d; margin:6px 0; }
+
+  .bg-soft { background:#fbe9ee; }
+
+  .btn {
+    display:inline-block; margin-top:14px; padding:14px 34px;
+    border:1px solid #e0567f; border-radius:40px;
+    color:#c2385e; text-decoration:none; font-size:15px;
+    letter-spacing:2px; text-transform:uppercase;
+    transition: .25s;
+    -webkit-transition: .25s;
+    touch-action: manipulation;
+  }
+  .btn:active { background:#e0567f; color:#fff; }
+
+  .footer { padding:50px 24px 70px; text-align:center; color:#b98a99; font-size:15px; letter-spacing:2px; }
+
+  /* уважаем настройку «Уменьшение движения» — но не отключаем полностью,
+     а делаем анимацию мягче, чтобы сердце всё равно «жило» */
+  @media (prefers-reduced-motion: reduce) {
+    .heart-btn svg.beat { -webkit-animation: none; animation: none; }
+    .hint { -webkit-animation: none; animation: none; opacity:.7; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ===== ЭКРАН 1: СЕРДЦЕ ===== -->
+<div id="intro">
+  <div class="heart-btn" id="heart">
+    <svg viewBox="0 0 32 29" xmlns="http://www.w3.org/2000/svg">
+      <path class="fill" d="M16 29S0 19.5 0 9.5C0 4.3 4.3 0 9.5 0 12.6 0 15 1.7 16 3.2 17 1.7 19.4 0 22.5 0 27.7 0 32 4.3 32 9.5 32 19.5 16 29 16 29z"/>
+    </svg>
+  </div>
+  <div class="hint">Нажмите на сердце</div>
+</div>
+
+<!-- ===== ЭКРАН 2: ПРИГЛАШЕНИЕ ===== -->
+<div id="site">
+
+  <section class="hero">
+    <div class="names">
+      Рома
+      <span class="amp">&</span>
+      Никита
+    </div>
+    <div class="divider"></div>
+    <div class="date">14 · 09 · 2026</div>
+  </section>
+
+  <section class="section">
+    <h2>Дорогие друзья!</h2>
+    <p>В этот особенный день мы хотим разделить<br>нашу радость вместе с вами.</p>
+    <p style="margin-top:20px">Приглашаем вас на нашу свадьбу,<br>которая состоится</p>
+    <p class="big" style="margin-top:18px">14 сентября 2026</p>
+    <p>в 15:00</p>
+  </section>
+
+  <section class="section bg-soft">
+    <h2>Место проведения</h2>
+    <p class="big">Река «Днепр»</p>
+    <p>С собой обязательно фидер</p>
+    <a class="btn" href="https://maps.google.com" target="_blank" rel="noopener">Открыть карту</a>
+  </section>
+
+  <section class="section">
+    <h2>Программа дня</h2>
+    <p class="big">15:00 — Ловля</p>
+    <p class="big">17:00 — Рыба</p>
+    <p class="big">22:00 — Девочик</p>
+  </section>
+
+  <section class="section bg-soft">
+    <h2>Подтверждение</h2>
+    <p>Пожалуйста, сообщите о своём присутствии<br>до 1 сентября</p>
+    <a class="btn" href="tel:+79001234567">Позвонить</a>
+  </section>
+
+  <div class="footer">С любовью, Инна & Никита ♥</div>
+
+</div>
+
+<script>
+(function () {
+  var intro = document.getElementById('intro');
+  var site  = document.getElementById('site');
+  var heart = document.getElementById('heart');
+  var svg   = heart.querySelector('svg');
+  var opened = false;
+
+  // 1) Запускаем анимацию биения только после полной загрузки — Safari так надёжнее
+  function startBeat() {
+    svg.classList.add('beat');
+  }
+  if (document.readyState === 'complete') {
+    startBeat();
+  } else {
+    window.addEventListener('load', startBeat);
+    // страховка: если load почему-то не сработал за 1.5 сек — запускаем принудительно
+    setTimeout(startBeat, 1500);
+  }
+
+  // 2) Открытие приглашения
+  function openSite(e) {
+    if (e) { e.preventDefault(); }
+    if (opened) return;
+    opened = true;
+
+    intro.classList.add('hide');
+    site.classList.add('show');
+    site.scrollTop = 0;
+
+    if (navigator.vibrate) { try { navigator.vibrate(30); } catch (err) {} }
+
+    setTimeout(function () { intro.style.display = 'none'; }, 1000);
+  }
+
+  // 3) «Пуленепробиваемый» набор обработчиков:
+  //    pointerup — современные Safari/Chrome,
+  //    touchend  — старые iOS и встроенные браузеры мессенджеров,
+  //    click     — десктоп и страховка.
+  //    Флаг opened не даёт сработать дважды.
+  heart.addEventListener('pointerup', openSite, { passive: false });
+  heart.addEventListener('touchend',  openSite, { passive: false });
+  heart.addEventListener('click',     openSite, false);
+
+  // 4) Блокируем «фантомные» клики и случайный скролл на экране сердца
+  heart.addEventListener('touchstart', function (e) { e.preventDefault(); }, { passive: false });
+})();
+</script>
+</body>
+</html>
